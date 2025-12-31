@@ -5,8 +5,11 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy.orm import Session
+from fastapi import Depends
 from schemas import TokenData
-from database import get_user
+from database import get_db, get_user_by_email
+from models import User
 
 # --- Configuration ---
 SECRET_KEY = "YOUR_SUPER_SECRET_KEY" # In a real app, use environment variables
@@ -53,7 +56,7 @@ def decode_access_token(token: str) -> dict[str, Any]:
         )
 
 # --- Dependency for Protected Routes ---
-def get_current_user(token: str = Depends(oauth2_scheme)):
+def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)) -> User:
     """Dependency to get the current authenticated user."""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -69,7 +72,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     except JWTError:
         raise credentials_exception
     
-    user = get_user(email=token_data.email)
+    user = get_user_by_email(db, email=token_data.email)
     if user is None:
         raise credentials_exception
     return user

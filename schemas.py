@@ -8,6 +8,7 @@ class UserCreate(UserBase):
     password: str
 
 class UserInDB(UserBase):
+    id: int
     hashed_password: str
     is_active: bool = True
 
